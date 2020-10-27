@@ -89,6 +89,9 @@ func DecodeListAddress(baseAddress string, req string) (int, []string) {
 }
 
 func EncodeFolderInfoAddress(baseAddress string, folderPath ...string) string {
+	if len(folderPath) == 0 {
+		return fmt.Sprintf("list.%s", baseAddress)
+	}
 	return fmt.Sprintf("%s.list.%s", strings.Join(folderPath, "."), baseAddress)
 }
 

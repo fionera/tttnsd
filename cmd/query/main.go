@@ -1,96 +1,116 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
-	"strconv"
-	"strings"
 
-	"github.com/miekg/dns"
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 
-	"github.com/fionera/tttnsd/client"
+	"github.com/fionera/tttnsd/proto"
 )
 
-const baseAddress = "tttnsd.example.com"
+type reference struct {
+	item        proto.Item
+	path        []string
+	itemContent string
+}
+
+func (r *reference) ChildPath() []string {
+	return append([]string{r.item.GetID()}, r.path...)
+}
 
 func main() {
-	//c, err := client.NewFromOS()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+	flag.Parse()
+	domain := flag.Arg(0)
 
-	c := client.NewClient("127.0.0.1:8053")
-
-	list(c, "")
-}
-
-func list(c *client.Client, id string) {
-	var listUrl string
-	if id == "" {
-		listUrl = "list." + baseAddress
-	} else {
-		listUrl = id + ".list." + baseAddress
-	}
-	resp := doQuery(c, listUrl)
-	if resp == "" {
-		log.Fatal("invalid response")
+	if domain == "" {
+		log.Fatal("Please provide the Domain")
 	}
 
-	var pages int
-	for _, v := range strings.Split(resp, ";") {
-		if strings.HasPrefix(v, "PAGES ") {
-			p, err := strconv.Atoi(strings.TrimPrefix(v, "PAGES "))
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			pages = p
-		}
-	}
-
-	for i := 0; i < pages; i++ {
-		resp := doQuery(c, fmt.Sprintf("%d.%s", i, listUrl))
-		items := strings.Split(resp, ";")
-		for _, item := range items {
-			type_ := item[:2]
-			parts := strings.Split(item[2:], "|")
-			name := parts[0]
-			itemID := parts[1]
-
-			if type_ == "FD" {
-				next := itemID
-				if id != "" {
-					next += "." + id
-				}
-
-				defer list(c, next)
-			} else if type_ == "IT" {
-				next := itemID
-				if id != "" {
-					next += "." + id
-				}
-
-				resp := doQuery(c, fmt.Sprintf("%s", next+"."+baseAddress))
-				log.Println(name, "-", resp)
-			}
-		}
-	}
-}
-
-func doQuery(c *client.Client, address string) string {
-	m := new(dns.Msg)
-	m.SetQuestion(address+".", dns.TypeTXT)
-	m.RecursionDesired = true
-	r, _, err := c.Exchange(m)
+	c, err := proto.NewClient(domain)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, a := range r.Answer {
-		if txt, ok := a.(*dns.TXT); ok {
-			return txt.Txt[0]
+	app := tview.NewApplication()
+
+	root := tview.NewTreeNode(domain).
+		SetColor(tcell.ColorRed)
+	tree := tview.NewTreeView().
+		SetRoot(root).
+		SetCurrentNode(root)
+
+	addPath := func(target *tview.TreeNode, path ...string) {
+		items, err := c.GetDir(path...)
+		if err != nil {
+			log.Println(path)
+			target.SetColor(tcell.ColorDarkRed)
+			return
+		}
+
+		for _, item := range items {
+			r := reference{
+				item: item,
+				path: path,
+			}
+
+			node := tview.NewTreeNode(item.GetName()).
+				SetReference(&r).
+				SetSelectable(true)
+
+			if !r.item.IsDir() {
+				node.SetColor(tcell.ColorGreen)
+			}
+
+			target.AddChild(node)
 		}
 	}
 
-	return ""
+	disp := func(target *tview.TreeNode, ref *reference) {
+		if ref.itemContent == "" {
+			data, err := c.GetFile(ref.item.GetID(), ref.path...)
+			if err != nil {
+				target.SetColor(tcell.ColorDarkRed)
+				return
+			}
+
+			ref.itemContent = data
+		}
+
+		modal := tview.NewModal().
+			SetText(fmt.Sprintf("%s\n\n%s", ref.item.GetName(), ref.itemContent[3:])).
+			AddButtons([]string{"Close"}).
+			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+				app.SetRoot(tree, false)
+			})
+
+		app.SetRoot(modal, false)
+	}
+
+	addPath(root)
+
+	tree.SetSelectedFunc(func(node *tview.TreeNode) {
+		r := node.GetReference()
+		if r == nil {
+			return
+		}
+
+		children := node.GetChildren()
+		if len(children) == 0 {
+			ref := r.(*reference)
+			if !ref.item.IsDir() {
+				disp(node, ref)
+			} else {
+				addPath(node, r.(*reference).ChildPath()...)
+			}
+		} else {
+			node.SetExpanded(!node.IsExpanded())
+		}
+	})
+
+	if err := app.SetRoot(tree, true).EnableMouse(true).Run(); err != nil {
+		log.Fatal(err)
+	}
 }

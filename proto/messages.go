@@ -99,11 +99,26 @@ type FolderPage struct {
 
 type Item interface {
 	fmt.Stringer
+	IsDir() bool
+	GetName() string
+	GetID() string
 }
 
 type Dir struct {
 	Name string
 	ID   string
+}
+
+func (d *Dir) GetID() string {
+	return d.ID
+}
+
+func (d *Dir) GetName() string {
+	return d.Name
+}
+
+func (d *Dir) IsDir() bool {
+	return true
 }
 
 func (d *Dir) String() string {
@@ -115,11 +130,23 @@ type File struct {
 	ID   string
 }
 
-func (d *File) String() string {
-	return fmt.Sprintf("IT %s|%s", d.Name, d.ID)
+func (f *File) GetID() string {
+	return f.ID
 }
 
-func DecodeItem(s string) Item {
+func (f *File) GetName() string {
+	return f.Name
+}
+
+func (f *File) IsDir() bool {
+	return false
+}
+
+func (f *File) String() string {
+	return fmt.Sprintf("IT %s|%s", f.Name, f.ID)
+}
+
+func decodeItem(s string) Item {
 	var item Item
 
 	switch s[:2] {
@@ -157,7 +184,7 @@ func (f *FolderPage) Decode(resp string) *FolderPage {
 
 	parts := strings.Split(resp, ";")
 	for _, part := range parts {
-		item := DecodeItem(part)
+		item := decodeItem(part)
 		if item == nil {
 			continue
 		}
