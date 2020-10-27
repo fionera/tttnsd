@@ -61,9 +61,10 @@ Regex:
 
 The id enpoint returns the data for the given item_id.
 
-Response:
-`00` means that the content is a String
+Response:  
+`00` means that the content is a String  
 `01` means that the content is a href
+`02` means that the content is a torrent info hash
 
 ```
 00 CONTENT

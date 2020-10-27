@@ -24,6 +24,7 @@ func NewServer(baseAddress string, rootFolder string) *Server {
 func (s Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(r)
+	m.Compress = true
 
 	defer func() {
 		if err := w.WriteMsg(m); err != nil {

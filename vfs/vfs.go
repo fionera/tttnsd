@@ -137,8 +137,8 @@ func (v *VFS) getPathID(path string) *ID {
 	}
 }
 
-func (v *VFS) walkDir(path string, info os.FileInfo, err error) error {
-	id := v.getPathID(path)
+func (v *VFS) walkDir(p string, info os.FileInfo, err error) error {
+	id := v.getPathID(p)
 	if id == nil {
 		return nil
 	}
@@ -152,14 +152,31 @@ func (v *VFS) walkDir(path string, info os.FileInfo, err error) error {
 
 		v.dirCache[id.String()] = item.(*Dir)
 	} else {
-		c, err := ioutil.ReadFile(path)
+		data, err := ioutil.ReadFile(p)
 		if err != nil {
 			return err
 		}
 
+		c := string(data)
+		switch path.Ext(info.Name()) {
+		case ".txt":
+			c = "00 " + c
+		case ".href":
+			c = "01 " + c
+		case ".torrent":
+			torrent, err := newTorrent(data)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			c = "02 " + strings.ToUpper(torrent.HashInfoBytes().HexString())
+		default:
+			return fmt.Errorf("unkown format")
+		}
+
 		item = &File{
 			name:    info.Name(),
-			content: string(c),
+			content: c,
 			id:      id,
 		}
 
