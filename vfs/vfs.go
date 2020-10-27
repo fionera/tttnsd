@@ -104,13 +104,14 @@ func (id *ID) String() string {
 	return id.itemID + "." + id.PathID()
 }
 
-func (v *VFS) getPathID(p string) *ID {
+func (v *VFS) getPathID(path string) *ID {
 	var ids []string
 
-	dirs := strings.Split(p, string(os.PathSeparator))
+	path = strings.TrimPrefix(path, v.rootDir)
+	dirs := strings.Split(path, string(os.PathSeparator))
 	for _, d := range dirs {
 		id := fmt.Sprintf("%x", md5.Sum([]byte(d)))
-		if d == v.rootDir {
+		if d == "" {
 			id = "root"
 		}
 
@@ -119,6 +120,10 @@ func (v *VFS) getPathID(p string) *ID {
 
 	if len(ids) == 0 {
 		return nil
+	}
+
+	if len(ids) == 1 && ids[0] == "" {
+		ids[0] = "root"
 	}
 
 	// Reverse the array
@@ -132,8 +137,8 @@ func (v *VFS) getPathID(p string) *ID {
 	}
 }
 
-func (v *VFS) walkDir(p string, info os.FileInfo, err error) error {
-	id := v.getPathID(p)
+func (v *VFS) walkDir(path string, info os.FileInfo, err error) error {
+	id := v.getPathID(path)
 	if id == nil {
 		return nil
 	}
@@ -147,7 +152,7 @@ func (v *VFS) walkDir(p string, info os.FileInfo, err error) error {
 
 		v.dirCache[id.String()] = item.(*Dir)
 	} else {
-		c, err := ioutil.ReadFile(p)
+		c, err := ioutil.ReadFile(path)
 		if err != nil {
 			return err
 		}

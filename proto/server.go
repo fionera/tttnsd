@@ -73,7 +73,7 @@ func (s Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 
 func (s *Server) handleServerInfo(m *dns.Msg) {
 	si := &ServerInfo{
-		BaseURL:  s.baseAddress[:len(s.baseAddress)-1],
+		BaseURL:  s.baseAddress,
 		Features: []string{"FOLDER", "HREF", "TXT"},
 	}
 
