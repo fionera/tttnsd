@@ -1,6 +1,10 @@
 # tttnsd
 Try taking this nameserver down
 
+# Example
+## Server
+You can run it with `go run cmd/serve/main.go --dir test --domain tttnsd.example.com --port 53`
+
 # Protocol
 
 ## Initial Request
@@ -25,7 +29,7 @@ dig list.tttnsd.example.com
 ```
 
 ```
-PAGES 23;ITEMS 2342 
+PAGES 23;ITEMS 2342
 ```
 
 ---
