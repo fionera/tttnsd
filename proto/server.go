@@ -2,6 +2,7 @@ package proto
 
 import (
 	"log"
+	"time"
 
 	"github.com/miekg/dns"
 
@@ -15,10 +16,19 @@ type Server struct {
 }
 
 func NewServer(baseAddress string, rootFolder string) *Server {
-	return &Server{
+	s := &Server{
 		baseAddress: baseAddress,
 		vfs:         vfs.NewVFS(rootFolder),
 	}
+
+	go func() {
+		for {
+			time.Sleep(5 * time.Minute)
+			s.vfs = vfs.NewVFS(rootFolder)
+		}
+	}()
+
+	return s
 }
 
 func (s Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
