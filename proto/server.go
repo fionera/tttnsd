@@ -72,6 +72,7 @@ func (s Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		hdr.Rrtype = dns.TypeTXT
 		hdr.Class = dns.ClassINET
 		hdr.Name = name
+		hdr.Ttl = 60 * 5
 	}
 
 	for _, rr := range m.Extra {
@@ -79,6 +80,7 @@ func (s Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		hdr.Rrtype = dns.TypeTXT
 		hdr.Class = dns.ClassINET
 		hdr.Name = name
+		hdr.Ttl = 60 * 5
 	}
 }
 
