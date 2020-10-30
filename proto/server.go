@@ -54,12 +54,24 @@ func (s Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		s.handleServerInfo(m)
 	case ListAddress:
 		page, folderPath := DecodeListAddress(s.baseAddress+".", name)
+		if folderPath == nil {
+			return
+		}
+
 		s.handleList(m, page, folderPath)
 	case FolderInfoAddress:
 		folderPath := DecodeFolderInfoAddress(s.baseAddress+".", name)
+		if folderPath == nil {
+			return
+		}
+
 		s.handleFolderInfo(m, folderPath)
 	case ItemAddress:
 		itemID, folderPath := DecodeItemAddress(s.baseAddress+".", name)
+		if folderPath == nil {
+			return
+		}
+
 		s.handleItem(m, itemID, folderPath)
 	}
 
