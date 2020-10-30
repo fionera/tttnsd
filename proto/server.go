@@ -75,7 +75,7 @@ func (s Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 func (s *Server) handleServerInfo(m *dns.Msg) {
 	si := &ServerInfo{
 		BaseURL:  s.baseAddress,
-		Features: []string{"FOLDER", "HREF", "TXT"},
+		Features: []string{"FOLDER", "HREF", "TXT", "TORRENT"},
 	}
 
 	m.Answer = append(m.Answer, &dns.TXT{
