@@ -104,7 +104,7 @@ func (s *Server) handleList(m *dns.Msg, page int, path []string) {
 	}
 
 	pages := getPages(dir.GetItems())
-	if len(pages) < page || 0 > page {
+	if len(pages)-1 < page || 0 > page {
 		return
 	}
 
