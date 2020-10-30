@@ -90,7 +90,7 @@ func main() {
 					cnt := ref.itemContent[3:]
 					if filepath.Ext(ref.item.GetName()) == ".torrent" {
 						magnet := metainfo.Magnet{
-							InfoHash:    metainfo.NewHashFromHex(ref.itemContent),
+							InfoHash:    metainfo.NewHashFromHex(cnt),
 							Trackers:    nil,
 							DisplayName: ref.item.GetName(),
 							Params:      nil,
