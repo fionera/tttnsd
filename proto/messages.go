@@ -151,7 +151,7 @@ func decodeItem(s string) Item {
 
 	switch s[:2] {
 	case "FD":
-		kv := strings.Split(s[2:], "|")
+		kv := strings.Split(s[3:], "|")
 		if len(kv) != 2 {
 			return nil
 		}
@@ -162,7 +162,7 @@ func decodeItem(s string) Item {
 		}
 
 	case "IT":
-		kv := strings.Split(s[2:], "|")
+		kv := strings.Split(s[3:], "|")
 		if len(kv) != 2 {
 			return nil
 		}

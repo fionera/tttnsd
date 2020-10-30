@@ -1,6 +1,7 @@
 package client
 
 import (
+	"strings"
 	"time"
 
 	"github.com/miekg/dns"
@@ -19,6 +20,9 @@ func NewFromOS() (*Client, error) {
 
 	var addresses []string
 	for _, server := range os.Servers {
+		if strings.Contains(server, ":") {
+			server = "[" + server + "]"
+		}
 		addresses = append(addresses, server+":"+os.Port)
 	}
 

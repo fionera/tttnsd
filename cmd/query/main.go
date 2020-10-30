@@ -3,8 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"path/filepath"
 
+	"github.com/anacrolix/torrent/metainfo"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 
@@ -81,8 +84,26 @@ func main() {
 
 		modal := tview.NewModal().
 			SetText(fmt.Sprintf("%s\n\n%s", ref.item.GetName(), ref.itemContent[3:])).
-			AddButtons([]string{"Close"}).
+			AddButtons([]string{"Close", "Save"}).
 			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+				if buttonLabel == "Save" {
+					cnt := ref.itemContent[3:]
+					if filepath.Ext(ref.item.GetName()) == ".torrent" {
+						magnet := metainfo.Magnet{
+							InfoHash:    metainfo.NewHashFromHex(ref.itemContent),
+							Trackers:    nil,
+							DisplayName: ref.item.GetName(),
+							Params:      nil,
+						}
+
+						cnt = magnet.String()
+					}
+
+					err := ioutil.WriteFile(ref.item.GetName(), []byte(cnt), 0775)
+					if err != nil {
+						log.Fatal(err)
+					}
+				}
 				app.SetRoot(tree, false)
 			})
 
