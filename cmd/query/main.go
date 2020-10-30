@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/gdamore/tcell/v2"
@@ -82,24 +84,27 @@ func main() {
 			ref.itemContent = data
 		}
 
+		cnt := ref.itemContent[3:]
+		ext := filepath.Ext(ref.item.GetName())
+		name := strings.TrimSuffix(ref.item.GetName(), ext)
+		if ext == ".torrent" {
+			magnet := metainfo.Magnet{
+				InfoHash:    metainfo.NewHashFromHex(cnt),
+				Trackers:    getTrackers(),
+				DisplayName: name,
+				Params:      nil,
+			}
+
+			cnt = magnet.String()
+			ext = ".magnet.txt"
+		}
+
 		modal := tview.NewModal().
-			SetText(fmt.Sprintf("%s\n\n%s", ref.item.GetName(), ref.itemContent[3:])).
+			SetText(fmt.Sprintf("%s\n\n%s", ref.item.GetName(), cnt)).
 			AddButtons([]string{"Close", "Save"}).
 			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 				if buttonLabel == "Save" {
-					cnt := ref.itemContent[3:]
-					if filepath.Ext(ref.item.GetName()) == ".torrent" {
-						magnet := metainfo.Magnet{
-							InfoHash:    metainfo.NewHashFromHex(cnt),
-							Trackers:    nil,
-							DisplayName: ref.item.GetName(),
-							Params:      nil,
-						}
-
-						cnt = magnet.String()
-					}
-
-					err := ioutil.WriteFile(ref.item.GetName(), []byte(cnt), 0775)
+					err := ioutil.WriteFile(name+ext, []byte(cnt), 0775)
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -131,7 +136,22 @@ func main() {
 		}
 	})
 
-	if err := app.SetRoot(tree, true).EnableMouse(true).Run(); err != nil {
+	if err := app.SetRoot(tree, true).Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func getTrackers() []string {
+	resp, err := http.Get("https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt")
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil
+	}
+
+	return strings.Split(string(data), "\n")
 }
