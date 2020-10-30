@@ -29,7 +29,7 @@ jobs:
           echo ${{ env.VCS_REF }}
 
       - name: Compile Client with XGO
-        uses: crazy-max/ghaction-xgo@v1.3.0
+        uses: crazy-max/ghaction-xgo@v1.4.1
         with:
           xgo_version: latest
           go_version: latest
@@ -43,7 +43,7 @@ jobs:
           ldflags: '-X main.Version=${{ env.VCS_REF }}'
       
       - name: Compile Server with XGO
-        uses: crazy-max/ghaction-xgo@v1.3.0
+        uses: crazy-max/ghaction-xgo@v1.4.1
         with:
           xgo_version: latest
           go_version: latest
