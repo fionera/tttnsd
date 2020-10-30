@@ -12,6 +12,10 @@ type Client struct {
 	client *dns.Client
 }
 
+func newConfFromOS() (*dns.ClientConfig, error) {
+	return dns.ClientConfigFromFile("/etc/resolv.conf")
+}
+
 func NewFromOS() (*Client, error) {
 	os, err := newConfFromOS()
 	if err != nil {
