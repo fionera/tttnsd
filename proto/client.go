@@ -2,20 +2,62 @@ package proto
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/miekg/dns"
-
-	"github.com/fionera/tttnsd/client"
 )
+
+var DNSv4 = []string{"1.1.1.1", "1.0.0.1"}
+var DNSv6 = []string{"2606:4700:4700::1111", "2606:4700:4700::1001"}
+const DNSPort = 53
+
+type dnsClient struct {
+	addr   []string
+	client *dns.Client
+}
+
+func NewCFDNSClient() (*dnsClient, error) {
+	var addr []string
+
+	for _, s := range DNSv4 {
+		addr = append(addr, fmt.Sprintf("%s:%d", s, DNSPort))
+	}
+
+	for _, s := range DNSv6 {
+		addr = append(addr, fmt.Sprintf("[%s]:%d", s, DNSPort))
+	}
+
+	return NewDNSClient(addr...), nil
+}
+
+func NewDNSClient(addresses ...string) *dnsClient {
+	return &dnsClient{
+		addr:   addresses,
+		client: &dns.Client{},
+	}
+}
+
+func (c *dnsClient) Exchange(m *dns.Msg) (r *dns.Msg, rtt time.Duration, err error) {
+	for _, s := range c.addr {
+		r, rtt, err = c.client.Exchange(m, s)
+		if err != nil {
+			continue
+		}
+
+		return
+	}
+
+	return
+}
 
 type Client struct {
 	initURL string
-	c       *client.Client
+	c       *dnsClient
 	baseURL string
 }
 
 func NewClient(initURL string) (*Client, error) {
-	c, err := client.NewFromOS()
+	c, err := NewCFDNSClient()
 	if err != nil {
 		return nil, err
 	}
